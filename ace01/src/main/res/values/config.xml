@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--导航栏目栏目名字的大小,默认是16-->
+    <integer name="toolbar_home_news_colomn_text_size">16</integer>
+    <!--导航栏新闻栏目指示器: 0 代表默认下划线, 1 代表三角, 2 代表圆角矩形或椭圆 -->
+    <attr name="tl_indicator_style" format="enum">
+        <enum name="TYPE" value="1" />
+    </attr>
+    <!-- 顶部导航栏，设为25dp为椭圆，设为5dp为圆角矩形 -->
+    <dimen name="indicator_corner_radius">5dp</dimen>
+    <!-- 顶部导航栏，下划线/三角/椭圆或矩形背景色，无需单独区分，建议圆角矩形或圆形背景色为#ebe7e3 -->
+    <color name="toolbar_news_indicator_bg">#ebe7e3</color>
+    <!--顶部导航栏新闻栏目默认字体(或者图片)颜色，默认是白色-->
+    <color name="toolbar_news_nomal_font_bg">#ffffff</color>
+    <!--顶部导航栏新闻栏目选中字体(或者图片)颜色，默认是白色-->
+    <color name="toolbar_news_selected_font_bg">@color/colorPrimary</color>
+
+</resources>

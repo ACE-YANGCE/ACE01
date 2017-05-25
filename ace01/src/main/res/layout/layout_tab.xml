@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:attr="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:clipChildren="false">
+
+    <TextView
+        android:id="@+id/tv_tab_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        android:singleLine="true"
+        android:textAllCaps="false" />
+
+    <ImageView
+        android:id="@+id/iv_tab_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:visibility="gone" />
+
+    <com.example.ace01.utils.MsgView
+        android:id="@+id/rtv_msg_tip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="#ffffff"
+        android:textSize="11.5sp"
+        android:visibility="gone"
+        attr:mv_backgroundColor="#FD481F"
+        attr:mv_isRadiusHalfHeight="true"
+        attr:mv_strokeColor="#ffffff"
+        attr:mv_strokeWidth="1dp" />
+
+</RelativeLayout>

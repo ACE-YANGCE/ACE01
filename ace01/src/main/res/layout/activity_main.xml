@@ -18,6 +18,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="10dp"
-        android:text="Tab with Img" />
+        android:text="Tab with Pic" />
+
+    <Button
+        android:id="@+id/main_btn3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:text="Tab with Pic (不强制绘制图片颜色)" />
 
 </LinearLayout>

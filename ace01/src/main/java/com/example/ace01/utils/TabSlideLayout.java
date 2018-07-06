@@ -33,6 +33,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.BitmapImageViewTarget;
+import com.bumptech.glide.request.target.SimpleTarget;
 import com.example.ace01.R;
 
 import java.util.ArrayList;
@@ -121,6 +122,8 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
     private int mLastScrollX;
     private int mHeight;
     private boolean mSnapOnTabClick;
+    // 图片是否绘色
+    private boolean mChangeColor;
 
     public TabSlideLayout(Context context) {
         this(context, null, 0);
@@ -180,6 +183,8 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
         mDividerColor = ta.getColor(R.styleable.SlidingTabLayout_tl_divider_color, Color.parseColor("#ffffff"));
         mDividerWidth = ta.getDimension(R.styleable.SlidingTabLayout_tl_divider_width, dp2px(0));
         mDividerPadding = ta.getDimension(R.styleable.SlidingTabLayout_tl_divider_padding, dp2px(12));
+
+        mChangeColor = ta.getBoolean(R.styleable.SlidingTabLayout_tl_is_change_color, true);
 
         try {
             mTextsize = (float) getResources().getInteger(R.integer.toolbar_home_news_colomn_text_size);
@@ -309,7 +314,7 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
             if (title != null) tv_tab_title.setText(title);
         }
 
-        tabView.setOnClickListener(new View.OnClickListener() {
+        tabView.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 int position = mTabsContainer.indexOfChild(v);
@@ -335,10 +340,10 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
 
         /** 每一个Tab的布局参数 */
         LinearLayout.LayoutParams lp_tab = mTabSpaceEqual ?
-                new LinearLayout.LayoutParams(0, FrameLayout.LayoutParams.MATCH_PARENT, 1.0f) :
-                new LinearLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.MATCH_PARENT);
+                new LinearLayout.LayoutParams(0, LayoutParams.MATCH_PARENT, 1.0f) :
+                new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
         if (mTabWidth > 0) {
-            lp_tab = new LinearLayout.LayoutParams((int) mTabWidth, FrameLayout.LayoutParams.MATCH_PARENT);
+            lp_tab = new LinearLayout.LayoutParams((int) mTabWidth, LayoutParams.MATCH_PARENT);
         }
 
         mTabsContainer.addView(tabView, position, lp_tab);
@@ -351,47 +356,33 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
         if (iv_tab_title != null) {
             iv_tab_title.setVisibility(View.VISIBLE);
             if (title != null && !StringUtils.isBlank(title)) {
-                Glide.with(mContext).load(title)
-                        .asBitmap()
-                        .placeholder(R.mipmap.top_default_bg)
-                        .diskCacheStrategy(DiskCacheStrategy.SOURCE)
-                        .into(new BitmapImageViewTarget(iv_tab_title) {
+                Glide.with(mContext).load(title).asBitmap()
+                        .placeholder(R.mipmap.top_default_bg).diskCacheStrategy(DiskCacheStrategy.SOURCE)
+                        .into(new SimpleTarget<Bitmap>() {
                             @Override
                             public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                                super.onResourceReady(resource, glideAnimation);
-                                resource = BitmapUtil.tintBitmap(resource, (position == 0) ? mTextSelectColor : mTextUnselectColor);
-                                ViewGroup.LayoutParams params = iv_tab_title.getLayoutParams();
-                                int vw = iv_tab_title.getHeight() - iv_tab_title.getPaddingTop() - iv_tab_title.getPaddingBottom();
-                                float scale = (float) vw / (float) resource.getHeight();
-                                int vh = Math.round(resource.getWidth() / scale);
-                                params.width = vh + iv_tab_title.getPaddingLeft() + iv_tab_title.getPaddingRight();
-                                iv_tab_title.setLayoutParams(params);
+                                if (mChangeColor) {
+                                    resource = BitmapUtil.tintBitmap(resource, (position == 0) ? mTextSelectColor : mTextUnselectColor);
+                                }
                                 iv_tab_title.setImageBitmap(resource);
                             }
                         });
             } else {
-                Glide.with(mContext).load(URL)
-                        .asBitmap()
-                        .placeholder(R.mipmap.top_default_bg)
-                        .diskCacheStrategy(DiskCacheStrategy.SOURCE)
-                        .into(new BitmapImageViewTarget(iv_tab_title) {
+                Glide.with(mContext).load(URL).asBitmap()
+                        .placeholder(R.mipmap.top_default_bg).diskCacheStrategy(DiskCacheStrategy.SOURCE)
+                        .into(new SimpleTarget<Bitmap>() {
                             @Override
                             public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                                super.onResourceReady(resource, glideAnimation);
-                                resource = BitmapUtil.tintBitmap(resource, (position == 0) ? mTextSelectColor : mTextUnselectColor);
-                                ViewGroup.LayoutParams params = iv_tab_title.getLayoutParams();
-                                int vw = iv_tab_title.getHeight() - iv_tab_title.getPaddingTop() - iv_tab_title.getPaddingBottom();
-                                float scale = (float) vw / (float) resource.getHeight();
-                                int vh = Math.round(resource.getWidth() / scale);
-                                params.width = vh + iv_tab_title.getPaddingLeft() + iv_tab_title.getPaddingRight();
-                                iv_tab_title.setLayoutParams(params);
+                                if (mChangeColor) {
+                                    resource = BitmapUtil.tintBitmap(resource, (position == 0) ? mTextSelectColor : mTextUnselectColor);
+                                }
                                 iv_tab_title.setImageBitmap(resource);
                             }
                         });
             }
         }
 
-        tabView.setOnClickListener(new View.OnClickListener() {
+        tabView.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 int position = mTabsContainer.indexOfChild(v);
@@ -417,10 +408,10 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
 
         /** 每一个Tab的布局参数 */
         LinearLayout.LayoutParams lp_tab = mTabSpaceEqual ?
-                new LinearLayout.LayoutParams(0, FrameLayout.LayoutParams.WRAP_CONTENT, 1.0f) :
+                new LinearLayout.LayoutParams(0, LayoutParams.WRAP_CONTENT, 1.0f) :
                 new LinearLayout.LayoutParams(dp2px(50), dp2px(50));
         if (mTabWidth > 0) {
-            lp_tab = new LinearLayout.LayoutParams((int) mTabWidth, FrameLayout.LayoutParams.MATCH_PARENT);
+            lp_tab = new LinearLayout.LayoutParams((int) mTabWidth, LayoutParams.MATCH_PARENT);
         }
 
         mTabsContainer.addView(tabView, position, lp_tab);
@@ -453,40 +444,26 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
             View v = mTabsContainer.getChildAt(i);
             final ImageView iv_tab_title = (ImageView) v.findViewById(R.id.iv_tab_title);
             if (mIconTitles != null && mIconTitles.get(i) != null && !StringUtils.isBlank(mIconTitles.get(i))) {
-                Glide.with(mContext).load(mIconTitles.get(i))
-                        .asBitmap()
-                        .placeholder(R.mipmap.top_default_bg)
-                        .diskCacheStrategy(DiskCacheStrategy.SOURCE)
-                        .into(new BitmapImageViewTarget(iv_tab_title) {
+                Glide.with(mContext).load(mIconTitles.get(i)).asBitmap()
+                        .placeholder(R.mipmap.top_default_bg).diskCacheStrategy(DiskCacheStrategy.SOURCE)
+                        .into(new SimpleTarget<Bitmap>() {
                             @Override
                             public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                                super.onResourceReady(resource, glideAnimation);
-                                resource = BitmapUtil.tintBitmap(resource, (position == mCurrentTab) ? mTextSelectColor : mTextUnselectColor);
-                                ViewGroup.LayoutParams params = iv_tab_title.getLayoutParams();
-                                int vw = iv_tab_title.getHeight() - iv_tab_title.getPaddingTop() - iv_tab_title.getPaddingBottom();
-                                float scale = (float) vw / (float) resource.getHeight();
-                                int vh = Math.round(resource.getWidth() / scale);
-                                params.width = vh + iv_tab_title.getPaddingLeft() + iv_tab_title.getPaddingRight();
-                                iv_tab_title.setLayoutParams(params);
+                                if (mChangeColor) {
+                                    resource = BitmapUtil.tintBitmap(resource, (position == mCurrentTab) ? mTextSelectColor : mTextUnselectColor);
+                                }
                                 iv_tab_title.setImageBitmap(resource);
                             }
                         });
             } else {
-                Glide.with(mContext).load(URL)
-                        .asBitmap()
-                        .placeholder(R.mipmap.top_default_bg)
-                        .diskCacheStrategy(DiskCacheStrategy.SOURCE)
-                        .into(new BitmapImageViewTarget(iv_tab_title) {
+                Glide.with(mContext).load(URL).asBitmap()
+                        .placeholder(R.mipmap.top_default_bg).diskCacheStrategy(DiskCacheStrategy.SOURCE)
+                        .into(new SimpleTarget<Bitmap>() {
                             @Override
                             public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                                super.onResourceReady(resource, glideAnimation);
-                                resource = BitmapUtil.tintBitmap(resource, (position == mCurrentTab) ? mTextSelectColor : mTextUnselectColor);
-                                ViewGroup.LayoutParams params = iv_tab_title.getLayoutParams();
-                                int vw = iv_tab_title.getHeight() - iv_tab_title.getPaddingTop() - iv_tab_title.getPaddingBottom();
-                                float scale = (float) vw / (float) resource.getHeight();
-                                int vh = Math.round(resource.getWidth() / scale);
-                                params.width = vh + iv_tab_title.getPaddingLeft() + iv_tab_title.getPaddingRight();
-                                iv_tab_title.setLayoutParams(params);
+                                if (mChangeColor) {
+                                    resource = BitmapUtil.tintBitmap(resource, (position == mCurrentTab) ? mTextSelectColor : mTextUnselectColor);
+                                }
                                 iv_tab_title.setImageBitmap(resource);
                             }
                         });
@@ -578,28 +555,26 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
             final boolean isSelect = i == position;
             final ImageView tab_icon = (ImageView) tabView.findViewById(R.id.iv_tab_title);
             if (mIconTitles != null && mIconTitles.get(i) != null && !StringUtils.isBlank(mIconTitles.get(i))) {
-                Glide.with(mContext).load(mIconTitles.get(i))
-                        .asBitmap()
-                        .placeholder(R.mipmap.top_default_bg)
-                        .diskCacheStrategy(DiskCacheStrategy.SOURCE)
-                        .into(new BitmapImageViewTarget(tab_icon) {
+                Glide.with(mContext).load(mIconTitles.get(i)).asBitmap()
+                        .placeholder(R.mipmap.top_default_bg).diskCacheStrategy(DiskCacheStrategy.SOURCE)
+                        .into(new SimpleTarget<Bitmap>() {
                             @Override
                             public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                                super.onResourceReady(resource, glideAnimation);
-                                resource = BitmapUtil.tintBitmap(resource, isSelect ? mTextSelectColor : mTextUnselectColor);
+                                if (mChangeColor) {
+                                    resource = BitmapUtil.tintBitmap(resource, isSelect ? mTextSelectColor : mTextUnselectColor);
+                                }
                                 tab_icon.setImageBitmap(resource);
                             }
                         });
             } else {
-                Glide.with(mContext).load(URL)
-                        .asBitmap()
-                        .placeholder(R.mipmap.top_default_bg)
-                        .diskCacheStrategy(DiskCacheStrategy.SOURCE)
-                        .into(new BitmapImageViewTarget(tab_icon) {
+                Glide.with(mContext).load(URL).asBitmap()
+                        .placeholder(R.mipmap.top_default_bg).diskCacheStrategy(DiskCacheStrategy.SOURCE)
+                        .into(new SimpleTarget<Bitmap>() {
                             @Override
                             public void onResourceReady(Bitmap resource, GlideAnimation<? super Bitmap> glideAnimation) {
-                                super.onResourceReady(resource, glideAnimation);
-                                resource = BitmapUtil.tintBitmap(resource, isSelect ? mTextSelectColor : mTextUnselectColor);
+                                if (mChangeColor) {
+                                    resource = BitmapUtil.tintBitmap(resource, isSelect ? mTextSelectColor : mTextUnselectColor);
+                                }
                                 tab_icon.setImageBitmap(resource);
                             }
                         });
@@ -979,6 +954,14 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
 
     public boolean isTextAllCaps() {
         return mTextAllCaps;
+    }
+
+    public boolean isChangeColor() {
+        return mChangeColor;
+    }
+
+    public void setChangeColor(boolean mChangeColor) {
+        this.mChangeColor = mChangeColor;
     }
 
     public TextView getTitleView(int tab) {

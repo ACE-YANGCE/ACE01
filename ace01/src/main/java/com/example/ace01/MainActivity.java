@@ -8,7 +8,7 @@ import android.widget.Button;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Button mButton1, mButton2;
+    private Button mButton1, mButton2, mButton3;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +30,18 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent();
+                intent.putExtra("isChangeColor", true);
+                intent.setClass(MainActivity.this, TabImgSlideActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        mButton3 = (Button) this.findViewById(R.id.main_btn3);
+        mButton3.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent();
+                intent.putExtra("isChangeColor", false);
                 intent.setClass(MainActivity.this, TabImgSlideActivity.class);
                 startActivity(intent);
             }

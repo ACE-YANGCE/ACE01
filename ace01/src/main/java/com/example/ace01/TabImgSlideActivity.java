@@ -1,5 +1,6 @@
 package com.example.ace01;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewPager;
@@ -16,7 +17,7 @@ import java.util.ArrayList;
  * Created by ace on 2017/5/23 0023.
  */
 
-public class TabImgSlideActivity extends AppCompatActivity implements ViewPager.OnPageChangeListener{
+public class TabImgSlideActivity extends AppCompatActivity implements ViewPager.OnPageChangeListener {
 
     private TabSlideLayout mTabSlideLayout;
     private ViewPager mViewPager;
@@ -24,6 +25,7 @@ public class TabImgSlideActivity extends AppCompatActivity implements ViewPager.
     private ArrayList<String> mTitleList = new ArrayList<>();
     private ArrayList<String> mTitleIconList = new ArrayList<>();
     private TabFragmentAdapter mAdapter;
+    private boolean mChangeColor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,8 +33,14 @@ public class TabImgSlideActivity extends AppCompatActivity implements ViewPager.
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_tab_slide);
 
+        if (getIntent() != null) {
+            mChangeColor = getIntent().getBooleanExtra("isChangeColor", true);
+        }
+
         mTabSlideLayout = (TabSlideLayout) this.findViewById(R.id.tsl);
         mViewPager = (ViewPager) this.findViewById(R.id.vp);
+
+        mTabSlideLayout.setChangeColor(mChangeColor ? true : false);
 
         Fragment mFragOne = DemoFragment.newInstance("1", null);
         Fragment mFragTwo = DemoFragment.newInstance("2", null);

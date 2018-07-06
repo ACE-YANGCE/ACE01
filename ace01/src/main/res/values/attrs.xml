@@ -113,6 +113,8 @@
         <attr name="tl_textBold" />
         <attr name="tl_textAllCaps" />
 
+        <!-- 设置是否绘制图片颜色 -->
+        <attr name="tl_is_change_color" format="boolean" />
     </declare-styleable>
 
     <declare-styleable name="SegmentTabLayout">

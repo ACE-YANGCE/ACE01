@@ -19,7 +19,7 @@ import java.util.ArrayList;
 
 public class TabImgSlideActivity extends AppCompatActivity implements ViewPager.OnPageChangeListener {
 
-    private TabSlideLayout mTabSlideLayout;
+    private TabSlideLayout mTabSlideLayout1,mTabSlideLayout2;
     private ViewPager mViewPager;
     private ArrayList<Fragment> mFragList = new ArrayList<>();
     private ArrayList<String> mTitleList = new ArrayList<>();
@@ -37,10 +37,12 @@ public class TabImgSlideActivity extends AppCompatActivity implements ViewPager.
             mChangeColor = getIntent().getBooleanExtra("isChangeColor", true);
         }
 
-        mTabSlideLayout = (TabSlideLayout) this.findViewById(R.id.tsl);
+        mTabSlideLayout1 = (TabSlideLayout) this.findViewById(R.id.tsl);
+        mTabSlideLayout2 = (TabSlideLayout) this.findViewById(R.id.ts2);
         mViewPager = (ViewPager) this.findViewById(R.id.vp);
 
-        mTabSlideLayout.setChangeColor(mChangeColor ? true : false);
+        mTabSlideLayout1.setChangeColor(mChangeColor ? true : false);
+        mTabSlideLayout2.setChangeColor(mChangeColor ? true : false);
 
         Fragment mFragOne = DemoFragment.newInstance("1", null);
         Fragment mFragTwo = DemoFragment.newInstance("2", null);
@@ -75,7 +77,8 @@ public class TabImgSlideActivity extends AppCompatActivity implements ViewPager.
 
         mAdapter = new TabFragmentAdapter(getSupportFragmentManager(), mFragList, mTitleList);
         mViewPager.setAdapter(mAdapter);
-        mTabSlideLayout.setViewPager(mViewPager, 1, mTitleIconList);
+        mTabSlideLayout1.setViewPager(mViewPager, 1, mTitleIconList);
+        mTabSlideLayout2.setViewPager(mViewPager, 1, mTitleIconList);
         mViewPager.addOnPageChangeListener(this);
     }
 

@@ -5,7 +5,7 @@
     <integer name="toolbar_home_news_colomn_text_size">16</integer>
     <!--导航栏新闻栏目指示器: 0 代表默认下划线, 1 代表三角, 2 代表圆角矩形或椭圆 -->
     <attr name="tl_indicator_style" format="enum">
-        <enum name="TYPE" value="1" />
+        <enum name="TYPE" value="0" />
     </attr>
     <!-- 顶部导航栏，设为25dp为椭圆，设为5dp为圆角矩形 -->
     <dimen name="indicator_corner_radius">5dp</dimen>

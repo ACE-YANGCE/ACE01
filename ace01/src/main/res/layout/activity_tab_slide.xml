@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:tl="http://schemas.android.com/tools"
     android:orientation="vertical">
 
     <com.example.ace01.utils.TabSlideLayout
@@ -17,9 +18,18 @@
         app:tl_indicator_margin_left="2dp"
         app:tl_indicator_margin_right="2dp"
         app:tl_indicator_style="TYPE"
+        tl:tl_indicator_bounce_enable="true"
         app:tl_is_change_color="false"
         app:tl_textSelectColor="@color/toolbar_news_selected_font_bg"
         app:tl_textUnselectColor="@color/toolbar_news_nomal_font_bg" />
+
+    <com.example.ace01.utils.TabSlideLayout
+        android:id="@+id/ts2"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="#F6CE59"
+        tl:tl_indicator_bounce_enable="true"
+        tl:tl_indicator_width="10dp" />
 
     <android.support.v4.view.ViewPager
         android:id="@+id/vp"

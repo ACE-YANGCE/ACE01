@@ -14,7 +14,7 @@ import java.util.ArrayList;
 
 public class TabSlideActivity extends AppCompatActivity implements ViewPager.OnPageChangeListener{
 
-    private TabSlideLayout mTabSlideLayout;
+    private TabSlideLayout mTabSlideLayout1,mTabSlideLayout2;
     private ViewPager mViewPager;
     private ArrayList<Fragment> mFragList = new ArrayList<>();
     private ArrayList<String> mTitleList = new ArrayList<>();
@@ -27,7 +27,11 @@ public class TabSlideActivity extends AppCompatActivity implements ViewPager.OnP
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_tab_slide);
 
-        mTabSlideLayout = (TabSlideLayout) this.findViewById(R.id.tsl);
+        mTabSlideLayout1 = (TabSlideLayout) this.findViewById(R.id.tsl);
+        mTabSlideLayout1.setIndicatorAnimEnable(true);
+//        mTabSlideLayout1.setIndicatorWidth(20.0f);
+        mTabSlideLayout2 = (TabSlideLayout) this.findViewById(R.id.ts2);
+        mTabSlideLayout2.setIndicatorWidth(20.0f);
         mViewPager = (ViewPager) this.findViewById(R.id.vp);
 
         Fragment mFragOne = DemoFragment.newInstance("1", null);
@@ -49,7 +53,7 @@ public class TabSlideActivity extends AppCompatActivity implements ViewPager.OnP
         mFragList.add(mFragEight);
 
         for (int i = 0; i < mFragList.size()-2; i++) {
-            mTitleList.add("测试" + (i + 1));
+            mTitleList.add("测试测试" + (i + 1));
             mTitleIconList.add("");
         }
 
@@ -60,7 +64,8 @@ public class TabSlideActivity extends AppCompatActivity implements ViewPager.OnP
 
         mAdapter = new TabFragmentAdapter(getSupportFragmentManager(), mFragList, mTitleList);
         mViewPager.setAdapter(mAdapter);
-        mTabSlideLayout.setViewPager(mViewPager, 0, mTitleIconList);
+        mTabSlideLayout1.setViewPager(mViewPager, 0, mTitleIconList);
+        mTabSlideLayout2.setViewPager(mViewPager, 0, mTitleIconList);
         mViewPager.addOnPageChangeListener(this);
     }
 

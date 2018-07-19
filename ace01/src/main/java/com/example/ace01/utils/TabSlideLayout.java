@@ -1,5 +1,7 @@
 package com.example.ace01.utils;
 
+import android.animation.TypeEvaluator;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
@@ -10,6 +12,7 @@ import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
@@ -18,11 +21,13 @@ import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
@@ -39,13 +44,14 @@ import com.example.ace01.R;
 import java.util.ArrayList;
 import java.util.Collections;
 
+import static com.example.ace01.R.id.scrollView;
 import static com.example.ace01.R.id.tv_tab_title;
 
 /**
  * Created by ace on 2017/5/18 0018.
  */
 
-public class TabSlideLayout extends HorizontalScrollView implements ViewPager.OnPageChangeListener {
+public class TabSlideLayout extends HorizontalScrollView implements ViewPager.OnPageChangeListener, ValueAnimator.AnimatorUpdateListener {
 
     private String URL = "http://img.newaircloud.com/xkycs/pic/201606/29/a928beef-216e-4a31-98f5-1b0e7606d3ef.png";
     private Context mContext;
@@ -56,6 +62,19 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
     private float mCurrentPositionOffset;
     private int mTabCount;
     private int showFlag;
+
+    /** anim */
+    private ValueAnimator mValueAnimator;
+    private OvershootInterpolator mInterpolator = new OvershootInterpolator(1.5f);
+
+    private FragmentChangeManager mFragmentChangeManager;
+
+    private long mIndicatorAnimDuration;
+    private boolean mIndicatorAnimEnable;
+    private boolean mIndicatorBounceEnable;
+    private int mLastTab;
+    private boolean mIsFirstDraw = true;
+
     /**
      * 用于绘制显示器
      */
@@ -158,6 +177,9 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
             mHeight = a.getDimensionPixelSize(0, (ViewGroup.LayoutParams.WRAP_CONTENT));
             a.recycle();
         }
+
+        mValueAnimator = ValueAnimator.ofObject(new PointEvaluator(), mLastP, mCurrentP);
+        mValueAnimator.addUpdateListener(this);
     }
 
     private void obtainAttributes(Context context, AttributeSet attrs) {
@@ -186,6 +208,10 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
 
         mChangeColor = ta.getBoolean(R.styleable.SlidingTabLayout_tl_is_change_color, true);
 
+        mIndicatorAnimEnable = ta.getBoolean(R.styleable.SlidingTabLayout_tl_indicator_anim_enable, true);
+        mIndicatorBounceEnable = ta.getBoolean(R.styleable.SlidingTabLayout_tl_indicator_bounce_enable, true);
+        mIndicatorAnimDuration = ta.getInt(R.styleable.SlidingTabLayout_tl_indicator_anim_duration, -1);
+
         try {
             mTextsize = (float) getResources().getInteger(R.integer.toolbar_home_news_colomn_text_size);
         } catch (Exception e) {
@@ -202,6 +228,74 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
         mTabPadding = ta.getDimension(R.styleable.SlidingTabLayout_tl_tab_padding, mTabSpaceEqual || mTabWidth > 0 ? dp2px(0) : dp2px(8));
 
         ta.recycle();
+    }
+
+    /** 关联ViewPager */
+    public void setViewPager(ViewPager vp) {
+        if (vp == null || vp.getAdapter() == null) {
+            throw new IllegalStateException("ViewPager or ViewPager adapter can not be NULL !");
+        }
+
+        this.mViewPager = vp;
+
+        this.mViewPager.removeOnPageChangeListener(this);
+        this.mViewPager.addOnPageChangeListener(this);
+        notifyDataSetChanged();
+    }
+
+    /** 关联ViewPager,用于不想在ViewPager适配器中设置titles数据的情况 */
+    public void setViewPager(ViewPager vp, String[] titles) {
+        if (vp == null || vp.getAdapter() == null) {
+            throw new IllegalStateException("ViewPager or ViewPager adapter can not be NULL !");
+        }
+
+        if (titles == null || titles.length == 0) {
+            throw new IllegalStateException("Titles can not be EMPTY !");
+        }
+
+        if (titles.length != vp.getAdapter().getCount()) {
+            throw new IllegalStateException("Titles length must be the same as the page count !");
+        }
+
+        this.mViewPager = vp;
+        mTitles = new ArrayList<>();
+        Collections.addAll(mTitles, titles);
+
+        this.mViewPager.removeOnPageChangeListener(this);
+        this.mViewPager.addOnPageChangeListener(this);
+        notifyDataSetChanged();
+    }
+
+    /** 关联ViewPager,用于连适配器都不想自己实例化的情况 */
+    public void setViewPager(ViewPager vp, String[] titles, FragmentActivity fa, ArrayList<Fragment> fragments) {
+        if (vp == null) {
+            throw new IllegalStateException("ViewPager can not be NULL !");
+        }
+
+        if (titles == null || titles.length == 0) {
+            throw new IllegalStateException("Titles can not be EMPTY !");
+        }
+
+        this.mViewPager = vp;
+        this.mViewPager.setAdapter(new InnerPagerAdapter(fa.getSupportFragmentManager(), fragments, titles));
+
+        this.mViewPager.removeOnPageChangeListener(this);
+        this.mViewPager.addOnPageChangeListener(this);
+        notifyDataSetChanged();
+    }
+
+    /** 更新数据 */
+    public void notifyDataSetChanged() {
+        mTabsContainer.removeAllViews();
+        this.mTabCount = mTitles == null ? mViewPager.getAdapter().getCount() : mTitles.size();
+        View tabView;
+        for (int i = 0; i < mTabCount; i++) {
+            tabView = View.inflate(mContext, R.layout.layout_tab, null);
+            CharSequence pageTitle = mTitles == null ? mViewPager.getAdapter().getPageTitle(i) : mTitles.get(i);
+            addTab(i, pageTitle.toString(), tabView);
+        }
+
+        updateTabStyles();
     }
 
     /**
@@ -320,6 +414,7 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
                 int position = mTabsContainer.indexOfChild(v);
                 if (position != -1) {
                     if (mViewPager.getCurrentItem() != position) {
+//                        setCurrentTab(position);
                         if (mSnapOnTabClick) {
                             mViewPager.setCurrentItem(position, false);
                         } else {
@@ -388,6 +483,7 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
                 int position = mTabsContainer.indexOfChild(v);
                 if (position != -1) {
                     if (mViewPager.getCurrentItem() != position) {
+//                        setCurrentTab(position);
                         if (mSnapOnTabClick) {
                             mViewPager.setCurrentItem(position, false);
                         } else {
@@ -480,14 +576,26 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
          * position:当前View的位置
          * mCurrentPositionOffset:当前View的偏移量比例.[0,1)
          */
-        this.mCurrentTab = position;
-        this.mCurrentPositionOffset = positionOffset;
+        if(mCurrentTab == position){
+            Log.d("AAA","正在向左滑动");
+        }else{
+            Log.d("AAA","正在向右滑动");
+        }
+
+//        this.mCurrentTab = position;
+//        this.mCurrentPositionOffset = positionOffset;
+//        new Handler().postDelayed(new Runnable(){
+//            public void run() {
+//                scrollToCurrentTab();
+//            }
+//        }, mIndicatorBounceEnable ? 1200 : 250);
         scrollToCurrentTab();
         invalidate();
     }
 
     @Override
     public void onPageSelected(int position) {
+        setCurrentTab(position);
         if (showFlag == 0) {
             updateTabSelection(position);
         } else {
@@ -508,6 +616,7 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
         }
 
         int offset = (int) (mCurrentPositionOffset * mTabsContainer.getChildAt(mCurrentTab).getWidth());
+        Log.e("AAA===========","offset=="+offset+"==mCurrentPositionOffset=="+mCurrentPositionOffset);
         /**当前Tab的left+当前Tab的Width乘以positionOffset*/
         int newScrollX = mTabsContainer.getChildAt(mCurrentTab).getLeft() + offset;
 
@@ -520,11 +629,19 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
 
         if (newScrollX != mLastScrollX) {
             mLastScrollX = newScrollX;
+            final int tempX = newScrollX;
             /** scrollTo（int x,int y）:x,y代表的不是坐标点,而是偏移量
              *  x:表示离起始位置的x水平方向的偏移量
              *  y:表示离起始位置的y垂直方向的偏移量
              */
-            scrollTo(newScrollX, 0);
+            scrollTo(tempX, 0);
+
+//            new Handler().postDelayed(new Runnable(){
+//                public void run() {
+//                    //execute the task
+//                    scrollTo(tempX, 0);
+//                }
+//            }, mIndicatorBounceEnable ? 600 : 250);
         }
     }
 
@@ -532,13 +649,18 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
         for (int i = 0; i < mTabCount; ++i) {
             View tabView = mTabsContainer.getChildAt(i);
             final boolean isSelect = i == position;
-            TextView tab_title = (TextView) tabView.findViewById(R.id.tv_tab_title);
+            final TextView tab_title = (TextView) tabView.findViewById(R.id.tv_tab_title);
 
             if (tab_title != null) {
-                tab_title.setTextColor(isSelect ? mTextSelectColor : mTextUnselectColor);
-                if (mTextBold == TEXT_BOLD_WHEN_SELECT) {
-                    tab_title.getPaint().setFakeBoldText(isSelect);
+                new Handler().postDelayed(new Runnable(){
+                public void run() {
+                    tab_title.setTextColor(isSelect ? mTextSelectColor : mTextUnselectColor);
+                    if (mTextBold == TEXT_BOLD_WHEN_SELECT) {
+                        tab_title.getPaint().setFakeBoldText(isSelect);
+                    }
                 }
+            }, mIndicatorBounceEnable ? 400 : 250);
+
             }
         }
     }
@@ -579,6 +701,36 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
                             }
                         });
             }
+        }
+    }
+
+    private void calcOffset() {
+        final View currentTabView = mTabsContainer.getChildAt(this.mCurrentTab);
+        mCurrentP.left = currentTabView.getLeft();
+        mCurrentP.right = currentTabView.getRight();
+
+        final View lastTabView = mTabsContainer.getChildAt(this.mLastTab);
+        mLastP.left = lastTabView.getLeft();
+        mLastP.right = lastTabView.getRight();
+
+        Log.d("AAA", "mLastP--->" + mLastP.left + "&" + mLastP.right);
+        Log.d("AAA", "mCurrentP--->" + mCurrentP.left + "&" + mCurrentP.right);
+        if (mLastP.left == mCurrentP.left && mLastP.right == mCurrentP.right) {
+            invalidate();
+        } else {
+            mValueAnimator.setObjectValues(mLastP, mCurrentP);
+            if (mIndicatorBounceEnable) {
+                Log.e("AAA", "bbbbb");
+                mValueAnimator.setInterpolator(mInterpolator);
+            }
+            Log.e("AAA", "ccccc");
+            if (mIndicatorAnimDuration < 0) {
+                Log.e("AAA", "aaaaa");
+                mIndicatorAnimDuration = mIndicatorBounceEnable ? 1000 : 250;
+                Log.e("AAA", "ddddd"+mIndicatorAnimDuration);
+            }
+            mValueAnimator.setDuration(mIndicatorAnimDuration);
+            mValueAnimator.start();
         }
     }
 
@@ -672,8 +824,20 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
         }
 
         //draw indicator line
-
-        calcIndicatorRect();
+        if (mIndicatorAnimEnable) {
+            Log.e("AAA","11111");
+            if (mIsFirstDraw) {
+                Log.e("AAA","22222");
+                mIsFirstDraw = false;
+                Log.e("AAA","33333");
+                calcIndicatorRect();
+            }
+            Log.e("AAA","44444");
+        } else {
+            Log.e("AAA","55555");
+            calcIndicatorRect();
+        }
+//        calcIndicatorRect();
         if (mIndicatorStyle == STYLE_TRIANGLE) {
             if (mIndicatorHeight > 0) {
                 mTrianglePaint.setColor(mIndicatorColor);
@@ -731,14 +895,37 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
 
     //setter and getter
     public void setCurrentTab(int currentTab) {
-        this.mCurrentTab = currentTab;
-        mViewPager.setCurrentItem(currentTab);
+//        this.mCurrentTab = currentTab;
+//        mViewPager.setCurrentItem(currentTab);
 
+        mLastTab = this.mCurrentTab;
+        this.mCurrentTab = currentTab;
+        updateTabSelection(currentTab);
+        if (mFragmentChangeManager != null) {
+            mFragmentChangeManager.setFragments(currentTab);
+        }
+        if (mIndicatorAnimEnable) {
+            calcOffset();
+        } else {
+            invalidate();
+        }
     }
 
     public void setCurrentTab(int currentTab, boolean smoothScroll) {
+//        this.mCurrentTab = currentTab;
+//        mViewPager.setCurrentItem(currentTab, smoothScroll);
+
+        mLastTab = this.mCurrentTab;
         this.mCurrentTab = currentTab;
-        mViewPager.setCurrentItem(currentTab, smoothScroll);
+        updateTabSelection(currentTab);
+        if (mFragmentChangeManager != null) {
+            mFragmentChangeManager.setFragments(currentTab);
+        }
+        if (mIndicatorAnimEnable) {
+            calcOffset();
+        } else {
+            invalidate();
+        }
     }
 
     public void setIndicatorStyle(int indicatorStyle) {
@@ -1079,6 +1266,44 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
         this.mListener = listener;
     }
 
+    @Override
+    public void onAnimationUpdate(ValueAnimator animation) {
+        View currentTabView = mTabsContainer.getChildAt(this.mCurrentTab);
+        IndicatorPoint p = (IndicatorPoint) animation.getAnimatedValue();
+        mIndicatorRect.left = (int) p.left;
+        mIndicatorRect.right = (int) p.right;
+
+        if (mIndicatorWidth < 0) {   //indicatorWidth小于0时,原jpardogo's PagerSlidingTabStrip
+
+        } else {//indicatorWidth大于0时,圆角矩形以及三角形
+            float indicatorLeft = p.left + (currentTabView.getWidth() - mIndicatorWidth) / 2;
+
+            mIndicatorRect.left = (int) indicatorLeft;
+            mIndicatorRect.right = (int) (mIndicatorRect.left + mIndicatorWidth);
+        }
+        invalidate();
+    }
+
+    class IndicatorPoint {
+        public float left;
+        public float right;
+    }
+
+    private IndicatorPoint mCurrentP = new IndicatorPoint();
+    private IndicatorPoint mLastP = new IndicatorPoint();
+
+    class PointEvaluator implements TypeEvaluator<IndicatorPoint> {
+        @Override
+        public IndicatorPoint evaluate(float fraction, IndicatorPoint startValue, IndicatorPoint endValue) {
+            float left = startValue.left + fraction * (endValue.left - startValue.left);
+            float right = startValue.right + fraction * (endValue.right - startValue.right);
+            IndicatorPoint point = new IndicatorPoint();
+            point.left = left;
+            point.right = right;
+            return point;
+        }
+    }
+
     class InnerPagerAdapter extends FragmentStatePagerAdapter {
         private ArrayList<Fragment> fragments = new ArrayList<>();
         private String[] titles;
@@ -1152,4 +1377,29 @@ public class TabSlideLayout extends HorizontalScrollView implements ViewPager.On
         final float scale = this.mContext.getResources().getDisplayMetrics().scaledDensity;
         return (int) (sp * scale + 0.5f);
     }
+
+    public void setIndicatorAnimDuration(long indicatorAnimDuration) {
+        this.mIndicatorAnimDuration = indicatorAnimDuration;
+    }
+
+    public void setIndicatorAnimEnable(boolean indicatorAnimEnable) {
+        this.mIndicatorAnimEnable = indicatorAnimEnable;
+    }
+
+    public void setIndicatorBounceEnable(boolean indicatorBounceEnable) {
+        this.mIndicatorBounceEnable = indicatorBounceEnable;
+    }
+
+    public long getIndicatorAnimDuration() {
+        return mIndicatorAnimDuration;
+    }
+
+    public boolean isIndicatorAnimEnable() {
+        return mIndicatorAnimEnable;
+    }
+
+    public boolean isIndicatorBounceEnable() {
+        return mIndicatorBounceEnable;
+    }
+
 }
